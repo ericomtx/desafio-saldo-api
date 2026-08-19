@@ -15,17 +15,9 @@ import software.amazon.awssdk.services.sqs.SqsClientBuilder;
 
 import java.net.URI;
 
-/**
- * Em dev local (contra LocalStack): `app.aws.access-key`/`secret-key` e
- * `endpoint-override` vêm preenchidos no application.yml, então usamos
- * credenciais estáticas e forçamos o endpoint local.
- *
- * Em produção (ECS): essas propriedades NÃO são definidas nas task
- * definitions (ver terraform/ecs.tf) — ficam em branco de propósito, então
- * o SDK cai no DefaultCredentialsProvider, que descobre automaticamente as
- * credenciais temporárias da IAM Role da task via o endpoint de metadados
- * do ECS, e usa os endpoints reais da AWS (sem endpointOverride nenhum).
- */
+// Local: access-key/secret-key/endpoint vêm do application.yml (LocalStack).
+// Produção: essas props ficam em branco no ecs.tf de propósito, então cai
+// no DefaultCredentialsProvider (usa a IAM Role da task).
 @Configuration
 public class AwsClientsConfig {
 
@@ -43,7 +35,7 @@ public class AwsClientsConfig {
 
     private AwsCredentialsProvider credentials() {
         if (accessKey.isBlank() || secretKey.isBlank()) {
-            return DefaultCredentialsProvider.create(); // produção: usa a IAM Role da task
+            return DefaultCredentialsProvider.create();
         }
         return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
     }
@@ -54,7 +46,7 @@ public class AwsClientsConfig {
             .region(Region.of(region))
             .credentialsProvider(credentials());
         if (!endpointOverride.isBlank()) {
-            builder.endpointOverride(URI.create(endpointOverride)); // só em dev local
+            builder.endpointOverride(URI.create(endpointOverride));
         }
         return builder.build();
     }
@@ -65,7 +57,7 @@ public class AwsClientsConfig {
             .region(Region.of(region))
             .credentialsProvider(credentials());
         if (!endpointOverride.isBlank()) {
-            builder.endpointOverride(URI.create(endpointOverride)); // só em dev local
+            builder.endpointOverride(URI.create(endpointOverride));
         }
         return builder.build();
     }

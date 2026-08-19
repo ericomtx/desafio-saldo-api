@@ -26,17 +26,8 @@ public class BalanceRepository {
         this.dynamoDb = dynamoDb;
     }
 
-    /**
-     * Grava o saldo respeitando a ADR 0002: só atualiza se o timestamp da
-     * transação for mais novo que o que já está salvo. Se a condição
-     * falhar, a escrita é descartada como no-op — não é erro, é o
-     * comportamento esperado pra uma mensagem que chegou fora de ordem.
-     *
-     * Retry com jitter + circuit breaker (ADR 0005, config em
-     * application.yml — nomes de instância "dynamoWrite"): protege contra
-     * falhas passageiras de rede/throttling do DynamoDB sem martelar o
-     * serviço durante uma indisponibilidade real.
-     */
+    // Só atualiza se o timestamp for mais novo que o que já está salvo — SQS
+    // Standard não garante ordem, então isso evita sobrescrever com dado velho.
     @Retry(name = "dynamoWrite")
     @CircuitBreaker(name = "dynamoWrite")
     public void applyIfNewer(TransactionMessage message) {
@@ -51,7 +42,7 @@ public class BalanceRepository {
                     "#owner = :owner, updatedAtMicros = :ts")
                 .conditionExpression("attribute_not_exists(updatedAtMicros) OR updatedAtMicros < :ts")
                 .expressionAttributeNames(Map.of(
-                    "#owner", "owner" // "owner" é palavra reservada no DynamoDB — precisa de alias via ExpressionAttributeNames
+                    "#owner", "owner" // owner é reservado no DynamoDB, precisa de alias
                 ))
                 .expressionAttributeValues(Map.of(
                     ":amount", AttributeValue.fromN(String.valueOf(account.balance().amount())),
@@ -61,7 +52,7 @@ public class BalanceRepository {
                 ))
                 .build());
         } catch (ConditionalCheckFailedException e) {
-            // Mensagem mais antiga que o que já está salvo — descarta, é esperado (ADR 0002).
+            // mensagem chegou atrasada, ignora
             LOG.debug("Mensagem descartada por estar desatualizada — accountId={}, txTimestamp={}",
                 account.id(), tx.timestamp());
         }
@@ -72,7 +63,7 @@ public class BalanceRepository {
         var result = dynamoDb.getItem(GetItemRequest.builder()
             .tableName(TABLE_NAME)
             .key(Map.of("accountId", AttributeValue.fromS(accountId)))
-            .consistentRead(true) // consistência forte dentro do DynamoDB — ver ADR 0004
+            .consistentRead(true)
             .build());
 
         if (!result.hasItem()) {

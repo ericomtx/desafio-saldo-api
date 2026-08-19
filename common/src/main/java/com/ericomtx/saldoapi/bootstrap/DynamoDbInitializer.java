@@ -10,17 +10,9 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.util.List;
 
-/**
- * Cria as tabelas do DynamoDB automaticamente se não existirem — só por
- * conveniência para rodar localmente contra o localstack.
- *
- * Em produção, esse componente é DESLIGADO (ver terraform/ecs.tf, que
- * define APP_AWS_BOOTSTRAP_TABLES=false nas duas task definitions) — as
- * tabelas são provisionadas via Terraform, e a IAM Role da task nem tem
- * permissão de CreateTable/ListTables (least privilege). Sem essa flag, a
- * aplicação tentaria chamar uma API que não tem permissão e falharia no
- * startup em produção.
- */
+// Cria as tabelas se não existirem — conveniência pra dev local. Em
+// produção fica desligado (APP_AWS_BOOTSTRAP_TABLES=false no ecs.tf),
+// já que as tabelas são do Terraform e a task role nem tem permissão pra isso.
 @Component
 @ConditionalOnProperty(name = "app.aws.bootstrap-tables", havingValue = "true", matchIfMissing = true)
 public class DynamoDbInitializer {
@@ -60,10 +52,8 @@ public class DynamoDbInitializer {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .build());
         } catch (ResourceInUseException e) {
-            // Corrida entre web e consumer subindo ao mesmo tempo — os dois
-            // checam "existe?" antes de qualquer um terminar de criar. Quem
-            // perde a corrida cai aqui: a tabela já existe (criada pelo
-            // outro), então não é erro de verdade, só um "cheguei atrasado".
+            // web e consumer sobem juntos e podem tentar criar ao mesmo
+            // tempo — quem chega depois cai aqui, sem problema.
             LOG.info("Tabela '{}' já foi criada por outra instância — seguindo normalmente.", tableName);
         }
     }

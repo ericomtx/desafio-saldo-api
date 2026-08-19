@@ -41,8 +41,7 @@ class IngestionServiceTest {
 
     @Test
     void deveIgnorarTransacaoDuplicadaSemChamarOBanco() {
-        // Corner case (ADR 0003): SQS Standard pode entregar a mesma mensagem
-        // mais de uma vez. A segunda entrega não deve gerar escrita nenhuma.
+        // mensagem duplicada não pode gerar escrita nenhuma
         when(dedupRepository.isAlreadyProcessed("tx-1")).thenReturn(true);
 
         service.processMessage(PAYLOAD);
@@ -53,9 +52,8 @@ class IngestionServiceTest {
 
     @Test
     void naoDeveMarcarComoProcessadaSeAEscritaFalhar() {
-        // Corner case crítico (ADR 0003): se a escrita do saldo falhar, a
-        // transação NÃO pode ser marcada como processada — senão a mensagem
-        // reentregue seria ignorada pra sempre sem o saldo nunca ser aplicado.
+        // se a escrita falhar, não pode marcar como processada, senão a
+        // reentrega seria ignorada pra sempre
         when(dedupRepository.isAlreadyProcessed("tx-1")).thenReturn(false);
         doThrow(new RuntimeException("Falha simulada no DynamoDB"))
             .when(balanceRepository).applyIfNewer(any());
@@ -72,9 +70,7 @@ class IngestionServiceTest {
 
     @Test
     void deveLancarExcecaoParaPayloadMalformado() {
-        // Corner case: mensagem com JSON inválido não deve travar o consumer
-        // silenciosamente — precisa propagar erro para não ser deletada da
-        // fila (permitindo retry / eventual DLQ, ver ADR 0005).
+        // JSON inválido precisa propagar erro, não travar silenciosamente
         try {
             service.processMessage("{ isso não é um JSON válido");
             org.junit.jupiter.api.Assertions.fail("Deveria ter lançado IngestionException");

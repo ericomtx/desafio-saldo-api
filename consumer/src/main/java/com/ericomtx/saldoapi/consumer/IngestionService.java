@@ -24,20 +24,10 @@ public class IngestionService {
         this.balanceRepository = balanceRepository;
     }
 
-    /**
-     * Processa uma mensagem crua da fila. Não precisa checar
-     * `transaction.status` explicitamente — se for REJECTED, o
-     * `account.balance` na mensagem já vem com o saldo anterior (o gerador
-     * garante isso), então a escrita condicional da ADR 0002 trata os dois
-     * casos (APPROVED/REJECTED) de forma idêntica e correta. Ver nota na
-     * ADR 0002 sobre esse detalhe.
-     *
-     * IMPORTANTE (ADR 0003): a transação só é marcada como processada
-     * DEPOIS que a escrita do saldo é confirmada — nunca antes. Marcar
-     * antes "envenenaria" a transação permanentemente caso a escrita
-     * falhasse no meio do caminho (a mensagem seria reentregue, veria que
-     * "já foi processada", e nunca teria o saldo aplicado de verdade).
-     */
+    // Não checa status explicitamente — REJECTED já vem com o balance
+    // anterior no payload, então applyIfNewer trata os dois casos igual.
+    // Marca como processada só depois da escrita ter sucesso (se marcasse
+    // antes e a escrita falhasse, a reentrega seria ignorada pra sempre).
     public void processMessage(String rawBody) {
         TransactionMessage message;
         try {
@@ -50,12 +40,11 @@ public class IngestionService {
         String transactionId = message.transaction().id();
 
         if (dedupRepository.isAlreadyProcessed(transactionId)) {
-            LOG.debug("Transação {} já processada anteriormente — ignorando duplicata (ADR 0003)",
-                transactionId);
+            LOG.debug("Transação {} já processada anteriormente — ignorando duplicata", transactionId);
             return;
         }
 
-        balanceRepository.applyIfNewer(message); // se lançar exceção, a transação NÃO é marcada — reentrega tentará de novo
+        balanceRepository.applyIfNewer(message);
 
         dedupRepository.markAsProcessed(transactionId);
     }

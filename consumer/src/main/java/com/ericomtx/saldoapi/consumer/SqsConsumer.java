@@ -14,17 +14,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Consome a fila em lotes de até 10 mensagens (o máximo que o SQS permite
- * por chamada — ADR 0006), usando long polling para não gastar chamadas à
- * toa quando a fila está vazia.
- *
- * A escala real vem de rodar MÚLTIPLAS INSTÂNCIAS desse serviço em
- * paralelo (várias tasks ECS, ver diagrama de deploy) — o SQS já distribui
- * mensagens entre consumers concorrentes com segurança, então não há
- * necessidade de paralelismo adicional dentro de uma única instância além
- * do processamento do próprio lote.
- */
+// Lê a fila em lotes de 10 (máximo do SQS) com long polling. Escala
+// rodando várias instâncias em paralelo — o SQS já cuida da distribuição.
 @Component
 public class SqsConsumer {
 
@@ -64,8 +55,8 @@ public class SqsConsumer {
             try {
                 var response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
                     .queueUrl(queueUrl)
-                    .maxNumberOfMessages(10) // máximo permitido por chamada — ADR 0006
-                    .waitTimeSeconds(10)     // long polling — evita chamadas vazias repetidas
+                    .maxNumberOfMessages(10)
+                    .waitTimeSeconds(10)
                     .build());
 
                 if (!response.messages().isEmpty()) {
@@ -88,9 +79,8 @@ public class SqsConsumer {
                     .receiptHandle(message.receiptHandle())
                     .build());
             } catch (Exception e) {
-                // Não deleta — a mensagem volta a ficar visível após o visibility timeout
-                // e será reentregue. Se falhar repetidamente, o próprio SQS move para a
-                // DLQ com base no redrivePolicy configurado na fila (ADR 0005).
+                // não deleta — volta a ficar visível e é reentregue. Depois
+                // de N tentativas o SQS move sozinho pra DLQ.
                 LOG.error("Falha ao processar mensagem {} — será reentregue", message.messageId(), e);
             }
         }

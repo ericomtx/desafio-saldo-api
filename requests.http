@@ -1,10 +1,9 @@
 ### API de Consulta de Saldo — Coleção de Requisições
-### Uso: VSCode com a extensão "REST Client" (Huachao Mao) — clique em "Send Request"
 
 @baseUrl = http://localhost:8080
 
 ### 1. Consultar saldo — conta existente (200 OK)
-# Troca o UUID abaixo por um accountId real da sua execução local
+# Trocar o UUID abaixo por um accountId real da sua execução local
 # (pegue via: aws --endpoint-url=http://localhost:4566 --region sa-east-1 dynamodb scan --table-name saldos --max-items 1)
 GET {{baseUrl}}/balances/10fe3581-4771-4be9-b1ea-66d4713dcbda
 Accept: application/json

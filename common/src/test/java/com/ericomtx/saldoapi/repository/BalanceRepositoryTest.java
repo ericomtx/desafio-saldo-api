@@ -35,7 +35,6 @@ class BalanceRepositoryTest {
 
     @Test
     void deveIncluirCondicaoDeTimestampNaEscrita() {
-        // ADR 0002: toda escrita precisa checar se é mais recente que o que já está salvo
         var message = messageWith("acc-1", 150.0, 1_700_000_000_000_000L);
 
         repository.applyIfNewer(message);
@@ -53,14 +52,12 @@ class BalanceRepositoryTest {
 
     @Test
     void deveDescartarSilenciosamenteMensagemForaDeOrdem() {
-        // Corner case: mensagem mais antiga chega depois de uma mais nova.
-        // O DynamoDB rejeita a condição — a aplicação não deve propagar isso como erro.
+        // mensagem antiga chegando depois de uma nova — não pode dar erro
         var message = messageWith("acc-1", 100.0, 1_600_000_000_000_000L);
 
         when(dynamoDb.updateItem(any(UpdateItemRequest.class)))
             .thenThrow(ConditionalCheckFailedException.builder().build());
 
-        // não deve lançar exceção — é comportamento esperado, não falha
         repository.applyIfNewer(message);
 
         verify(dynamoDb).updateItem(any(UpdateItemRequest.class));
@@ -68,17 +65,13 @@ class BalanceRepositoryTest {
 
     @Test
     void transacaoRejeitadaUsaMesmoFluxoDeEscritaQueAprovada() {
-        // Corner case (descoberto no docker-compose.yml, não no PDF): quando
-        // status é REJECTED, account.balance já vem com o saldo anterior —
-        // então não deve haver nenhum branch especial de código para isso.
-        // Esse teste documenta essa decisão: o método nem recebe o status,
-        // só o balance já resolvido.
+        // REJECTED já vem com o balance anterior, não tem branch especial pra isso
         var rejectedMessage = new TransactionMessage(
             new TransactionMessage.TransactionData(
                 "tx-rejected", "DEBIT", 500.0, "BRL", "REJECTED", 1_700_000_000_000_001L),
             new TransactionMessage.AccountData(
                 "acc-2", "owner-2", "1634874339", "ENABLED",
-                new TransactionMessage.BalanceData(183.12, "BRL")) // saldo ANTERIOR, não alterado
+                new TransactionMessage.BalanceData(183.12, "BRL")) // saldo anterior
         );
 
         repository.applyIfNewer(rejectedMessage);

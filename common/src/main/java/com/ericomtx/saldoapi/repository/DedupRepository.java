@@ -12,7 +12,7 @@ import java.util.Map;
 public class DedupRepository {
 
     private static final String TABLE_NAME = "transacoes-processadas";
-    private static final long TTL_HOURS = 24; // ADR 0003: janela suficiente pra cobrir reentrega tardia do SQS
+    private static final long TTL_HOURS = 24;
 
     private final DynamoDbClient dynamoDb;
 
@@ -20,13 +20,9 @@ public class DedupRepository {
         this.dynamoDb = dynamoDb;
     }
 
-    /**
-     * Só verifica se essa transação já foi processada — não marca nada.
-     * Separado de {@link #markAsProcessed} de propósito: marcar só deve
-     * acontecer DEPOIS que a escrita do saldo for confirmada, nunca antes
-     * (ver ADR 0003 — marcar antes de escrever "envenena" a transação
-     * permanentemente se a escrita falhar no meio do caminho).
-     */
+    // Não marca nada, só checa. markAsProcessed só é chamado depois que o
+    // saldo já foi gravado com sucesso — se marcasse antes e a escrita
+    // falhasse, a mensagem reentregue seria ignorada pra sempre.
     @Retry(name = "dynamoRead")
     public boolean isAlreadyProcessed(String transactionId) {
         var result = dynamoDb.getItem(GetItemRequest.builder()
@@ -37,10 +33,6 @@ public class DedupRepository {
         return result.hasItem();
     }
 
-    /**
-     * Marca a transação como processada. Só deve ser chamado DEPOIS que a
-     * escrita do saldo já foi confirmada com sucesso.
-     */
     @Retry(name = "dynamoWrite")
     public void markAsProcessed(String transactionId) {
         long expiresAt = Instant.now().plusSeconds(TTL_HOURS * 3600).getEpochSecond();

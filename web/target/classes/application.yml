@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+app:
+  aws:
+    endpoint-override: http://localhost:4566
+    region: sa-east-1
+    access-key: test
+    secret-key: test
+
+# Só precisa do retry de leitura — essa aplicação nunca escreve no DynamoDB.
+resilience4j:
+  retry:
+    instances:
+      dynamoRead:
+        max-attempts: 3
+        wait-duration: 100ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        randomized-wait-factor: 0.5
+
+logging:
+  level:
+    com.ericomtx.saldoapi: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, metrics
