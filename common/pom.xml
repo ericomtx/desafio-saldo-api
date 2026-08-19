@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.ericomtx</groupId>
+    <artifactId>saldo-api-parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>saldo-api-common</artifactId>
+  <packaging>jar</packaging>
+
+  <!--
+    Biblioteca compartilhada entre web e consumer: DTOs (domain), acesso a
+    dados (repository), configuração dos clientes AWS (config), e o
+    bootstrap de tabelas pra dev local (bootstrap). NÃO é deployável
+    sozinha — não tem classe @SpringBootApplication nem plugin de
+    repackage, só vira dependência dos outros dois módulos.
+  -->
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+
+    <!-- Nenhum módulo usa spring-boot-starter-web, então o Jackson não vem
+         de brinde — precisa declarar explicitamente. Necessário tanto para
+         @JsonProperty/@JsonIgnoreProperties (domain) quanto para o bean
+         ObjectMapper (usado no consumer via autoconfiguração do Spring). -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.resilience4j</groupId>
+      <artifactId>resilience4j-spring-boot3</artifactId>
+      <version>${resilience4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>dynamodb</artifactId>
+      <version>${aws-sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sqs</artifactId>
+      <version>${aws-sdk.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

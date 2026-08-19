@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.ericomtx</groupId>
+  <artifactId>saldo-api-parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <!--
+    Projeto multi-módulo: "common" é uma biblioteca compartilhada (não
+    deployável sozinha), "web" e "consumer" são as duas aplicações reais,
+    cada uma virando seu próprio JAR/imagem — refletindo os dois serviços
+    ECS separados do diagrama de deploy (docs/adr/ e o diagrama de
+    arquitetura).
+  -->
+  <modules>
+    <module>common</module>
+    <module>web</module>
+    <module>consumer</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spring-boot.version>3.3.4</spring-boot.version>
+    <aws-sdk.version>2.28.11</aws-sdk.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+</project>

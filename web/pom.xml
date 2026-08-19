@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.ericomtx</groupId>
+    <artifactId>saldo-api-parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>saldo-api-web</artifactId>
+  <packaging>jar</packaging>
+
+  <!--
+    A API REST (GET /balances/{accountId}). Só lê do DynamoDB via
+    saldo-api-common — não consome a fila SQS, não escreve saldo. Vira sua
+    própria imagem Docker e seu próprio ECS Service, escalando
+    independentemente do consumer (por CPU/requisições, não pela fila).
+  -->
+
+  <dependencies>
+    <dependency>
+      <groupId>com.ericomtx</groupId>
+      <artifactId>saldo-api-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>saldo-api-web</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <mainClass>com.ericomtx.saldoapi.SaldoApiWebApplication</mainClass>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

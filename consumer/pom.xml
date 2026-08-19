@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.ericomtx</groupId>
+    <artifactId>saldo-api-parent</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>saldo-api-consumer</artifactId>
+  <packaging>jar</packaging>
+
+  <!--
+    O worker de ingestão: consome a fila SQS, escreve no DynamoDB via
+    saldo-api-common. Sem servidor HTTP (não depende de spring-boot-
+    starter-web) — o processo fica de pé porque o SqsConsumer inicia uma
+    thread não-daemon no @PostConstruct, mantendo a JVM viva. Vira sua
+    própria imagem Docker e seu próprio ECS Service, escalando pela
+    profundidade da fila.
+  -->
+
+  <dependencies>
+    <dependency>
+      <groupId>com.ericomtx</groupId>
+      <artifactId>saldo-api-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>saldo-api-consumer</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <mainClass>com.ericomtx.saldoapi.SaldoApiConsumerApplication</mainClass>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,45 @@
+# Este arquivo é pensado pra ser combinado com o docker-compose.yml
+# fornecido no desafio (o que sobe o LocalStack + gera as 300 mil
+# transações sintéticas) — não duplica o LocalStack, só adiciona os
+# dois serviços da aplicação, conectando no MESMO LocalStack já populado.
+#
+# Rodar assim (os dois arquivos juntos, na mesma pasta):
+#   docker compose -f docker-compose.yml -f docker-compose.apps.yml up --build
+#
+# O Compose combina os dois arquivos num projeto só — "localstack" logo
+# embaixo refere-se ao serviço definido no OUTRO arquivo, não precisa
+# redefinir.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_AWS_ENDPOINT_OVERRIDE=http://localstack:4566 # nome do serviço na rede do compose, não "localhost"
+      - APP_AWS_REGION=sa-east-1
+      - APP_AWS_ACCESS_KEY=test
+      - APP_AWS_SECRET_KEY=test
+    depends_on:
+      localstack:
+        condition: service_healthy
+      message-generator:
+        condition: service_completed_successfully
+
+  consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    environment:
+      - APP_AWS_ENDPOINT_OVERRIDE=http://localstack:4566
+      - APP_AWS_REGION=sa-east-1
+      - APP_AWS_ACCESS_KEY=test
+      - APP_AWS_SECRET_KEY=test
+      - APP_SQS_QUEUE_NAME=transacoes-financeiras-processadas
+    depends_on:
+      localstack:
+        condition: service_healthy
+      message-generator:
+        condition: service_completed_successfully

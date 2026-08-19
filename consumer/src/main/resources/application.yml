@@ -1,0 +1,31 @@
+app:
+  aws:
+    endpoint-override: http://localhost:4566
+    region: sa-east-1
+    access-key: test
+    secret-key: test
+  sqs:
+    queue-name: transacoes-financeiras-processadas
+
+# Retry de escrita (usado tanto na escrita do saldo quanto no dedup) —
+# essa aplicação nunca faz leitura de saldo, então não precisa de "dynamoRead".
+resilience4j:
+  retry:
+    instances:
+      dynamoWrite:
+        max-attempts: 5
+        wait-duration: 100ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        randomized-wait-factor: 0.5
+  circuitbreaker:
+    instances:
+      dynamoWrite:
+        sliding-window-size: 10
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+
+logging:
+  level:
+    com.ericomtx.saldoapi: DEBUG
