@@ -33,7 +33,6 @@ resource "aws_ecs_task_definition" "web" {
       { name = "APP_AWS_BOOTSTRAP_TABLES", value = "false" }
       # Propositalmente SEM app.aws.access-key/secret-key/endpoint-override:
       # em branco faz o AwsClientsConfig usar a IAM Role da task e os
-      # endpoints reais da AWS (ver a correção que fizemos no código).
     ]
     logConfiguration = {
       logDriver = "awslogs"
