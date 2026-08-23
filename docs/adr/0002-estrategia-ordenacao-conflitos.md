@@ -39,6 +39,13 @@ que já estava lá, não o altera.
 acima.
 
 **Trocar a fila pra um tipo que garante ordem (FIFO)** — não dava pra
-trocar, o desafio já define que a fila é do tipo que não garante ordem.
-Além disso, esse tipo de fila tem um limite de velocidade menor do que os
-2000/segundo que o desafio pede.
+trocar, o desafio já define o tipo da fila. Mas mesmo que desse: a
+garantia que esse sistema precisa não é "ordem de entrega", é "aplicar
+sempre o dado mais recente" — isso já é resolvido pela escrita condicional
+por timestamp acima, independente do tipo de fila. FIFO garante ordem
+*como foi enviado*, mas não protege contra o produtor publicar fora de
+ordem (retry, atraso de rede do lado de quem gera a transação) — só um
+consumidor consciente de timestamp resolve isso de fato. Idempotência
+também seria necessária de qualquer forma (FIFO só garante "exactly-once"
+dentro de uma janela de 5 minutos), então a proteção que já construí não
+seria eliminada trocando de fila — só mudaria onde a garantia mora.
