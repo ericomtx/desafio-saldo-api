@@ -11,6 +11,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
@@ -73,6 +75,10 @@ public class BalanceRepository {
         var item = result.item();
         long updatedAtMicros = Long.parseLong(item.get("updatedAtMicros").n());
 
+        OffsetDateTime updatedAt = Instant.EPOCH.plus(updatedAtMicros, ChronoUnit.MICROS)
+            .truncatedTo(ChronoUnit.MILLIS)
+            .atOffset(ZoneOffset.of("-03:00"));
+
         return new BalanceResponse(
             accountId,
             item.get("owner").s(),
@@ -80,7 +86,7 @@ public class BalanceRepository {
                 Double.parseDouble(item.get("balanceAmount").n()),
                 item.get("balanceCurrency").s()
             ),
-            Instant.EPOCH.plus(updatedAtMicros, ChronoUnit.MICROS)
+            updatedAt
         );
     }
 }

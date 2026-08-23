@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -27,7 +27,7 @@ class BalanceResourceTest {
     void deveRetornar200ComSaldoQuandoContaExiste() throws Exception {
         when(balanceRepository.findByAccountId("acc-1")).thenReturn(
             new BalanceResponse("acc-1", "owner-1",
-                new BalanceResponse.Money(183.12, "BRL"), Instant.parse("2025-07-04T18:04:13.433Z"))
+                new BalanceResponse.Money(183.12, "BRL"), OffsetDateTime.parse("2025-07-04T18:04:13.433-03:00"))
         );
 
         mockMvc.perform(get("/balances/acc-1"))

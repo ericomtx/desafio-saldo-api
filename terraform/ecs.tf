@@ -31,8 +31,8 @@ resource "aws_ecs_task_definition" "web" {
     environment = [
       { name = "APP_AWS_REGION", value = "sa-east-1" },
       { name = "APP_AWS_BOOTSTRAP_TABLES", value = "false" }
-      # Propositalmente SEM app.aws.access-key/secret-key/endpoint-override:
-      # em branco faz o AwsClientsConfig usar a IAM Role da task e os
+      # Sem access-key/secret-key/endpoint-override de propósito — em
+      # branco, cai na IAM Role da task (DefaultCredentialsProvider).
     ]
     logConfiguration = {
       logDriver = "awslogs"
@@ -86,7 +86,7 @@ resource "aws_ecs_task_definition" "consumer" {
       { name = "APP_AWS_REGION", value = "sa-east-1" },
       { name = "APP_SQS_QUEUE_NAME", value = aws_sqs_queue.transacoes_financeiras.name },
       { name = "APP_AWS_BOOTSTRAP_TABLES", value = "false" }
-      # Mesma lógica do web: sem credenciais/endpoint hardcoded.
+      # Idem web: sem credenciais/endpoint hardcoded.
     ]
     logConfiguration = {
       logDriver = "awslogs"

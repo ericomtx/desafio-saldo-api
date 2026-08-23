@@ -7,7 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 // Explícito porque nenhum módulo tem spring-web, então a autoconfig padrão
-// do ObjectMapper não dispara. JavaTimeModule pro Instant do BalanceResponse.
+// do ObjectMapper não dispara. JavaTimeModule é necessário pro
+// OffsetDateTime do BalanceResponse.
 @Configuration
 public class JacksonConfig {
 
