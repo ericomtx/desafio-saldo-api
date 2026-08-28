@@ -1,0 +1,54 @@
+name: CI
+
+# Roda de verdade a cada push/PR — grátis, repositório público, sem tocar em AWS.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build (todos os módulos)
+        run: mvn -B clean compile
+
+      - name: Testes
+        run: mvn -B test
+
+  # ---------------------------------------------------------------
+  # Estágio de deploy (canary via CodeDeploy) — PROPOSTA, não ativa.
+  # Documentado aqui pra mostrar o desenho completo do pipeline
+  # (ver ADR 0007), mas nunca executado: sem credencial AWS
+  # configurada no repositório, esse job nunca dispara de verdade.
+  # Mesmo racional do restante do Terraform deste projeto — escrito,
+  # nunca aplicado, pra não gerar custo nenhum na AWS.
+  # ---------------------------------------------------------------
+  # deploy-canary:
+  #   needs: build-and-test
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         role-to-assume: arn:aws:iam::<account-id>:role/github-actions-deploy
+  #         aws-region: sa-east-1
+  #     - name: Build e push das imagens (web e consumer)
+  #       run: |
+  #         # build + push pro ECR de cada imagem
+  #     - name: Disparar deploy canary via CodeDeploy
+  #       run: |
+  #         aws deploy create-deployment \
+  #           --application-name saldo-api \
+  #           --deployment-group-name saldo-api-canary \
+  #           --deployment-config-name CodeDeployDefault.ECSCanary10Percent5Minutes
